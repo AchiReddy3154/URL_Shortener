@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .dark .glass-effect {
+            background: rgba(17, 24, 39, 0.7);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+        .input-focus:focus {
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 glass-effect border-b border-gray-200 dark:border-gray-700">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                        URL Shortener
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- No authentication, just a clean nav -->
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+                        <svg class="w-5 h-5 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                        <svg class="w-5 h-5 hidden dark:block text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pt-24 pb-12">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+                Shorten Your URLs with Style
+            </h1>
+            <p class="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Create memorable, secure, and trackable short URLs in seconds.
+            </p>
+        </div>
+
+        <!-- URL Shortener Form -->
+        <div class="max-w-3xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
+                <form id="urlForm" class="space-y-6">
+                    <!-- Long URL Input -->
+                    <div>
+                        <label for="url" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Long URL
+                        </label>
+                        <input type="url" name="url" id="url" required
+                            class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 input-focus"
+                            placeholder="https://example.com/very/long/url">
+                    </div>
+
+                    <!-- Custom Code Input -->
+                    <div>
+                        <label for="custom_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Custom Code (Optional)
+                        </label>
+                        <input type="text" name="custom_code" id="custom_code"
+                            class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 input-focus"
+                            placeholder="your-custom-code">
+                    </div>
+
+                    <!-- Advanced Options -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Expiration Days -->
+                        <div>
+                            <label for="expiration_days" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Expiration (Days)
+                            </label>
+                            <input type="number" name="expiration_days" id="expiration_days" value="30" min="1" max="365"
+                                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white input-focus">
+                        </div>
+
+                        <!-- Password Protection -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Password Protection
+                                </label>
+                                <label class="inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="enablePassword" class="sr-only peer">
+                                    <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 dark:peer-focus:ring-indigo-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+                            <div id="passwordInputContainer" class="hidden">
+                                <input type="text" name="password" id="password" maxlength="6" pattern="[0-9]{6}"
+                                    class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 input-focus"
+                                    placeholder="Enter 6-digit PIN">
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enter a 6-digit PIN to protect your URL</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit"
+                        class="w-full gradient-bg text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:opacity-90 transition-all duration-200 flex items-center justify-center space-x-2">
+                        <span>Shorten URL</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Result Container -->
+            <div id="resultContainer" class="hidden mt-8">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Your Shortened URL</h3>
+                        <div class="flex items-center space-x-4">
+                            <input type="text" id="shortUrl" readonly
+                                class="flex-1 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white input-focus">
+                            <button onclick="copyToClipboard()"
+                                class="px-4 py-3 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                                </svg>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">QR Code</h3>
+                        <div class="flex justify-center">
+                            <img id="qrCode" alt="QR Code" class="max-w-xs rounded-lg shadow-md">
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <a id="downloadQr" download="qr-code.png"
+                                class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                </svg>
+                                <span>Download QR Code</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="fixed bottom-4 right-4 transform translate-y-full opacity-0 transition-all duration-300"></div>
+
+    <script>
+        // Theme Toggle
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+        }
+
+        // Initialize theme
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Password Toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const enablePasswordCheckbox = document.getElementById('enablePassword');
+            const passwordInputContainer = document.getElementById('passwordInputContainer');
+            const passwordInput = document.getElementById('password');
+
+            enablePasswordCheckbox.addEventListener('change', function() {
+                passwordInputContainer.classList.toggle('hidden');
+                if (this.checked) {
+                    passwordInput.setAttribute('required', '');
+                } else {
+                    passwordInput.removeAttribute('required');
+                    passwordInput.value = '';
+                }
+            });
+        });
+
+        // Form Submission
+        document.getElementById('urlForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                url: document.getElementById('url').value,
+                custom_code: document.getElementById('custom_code').value,
+                expiration_days: parseInt(document.getElementById('expiration_days').value),
+            };
+
+            if (document.getElementById('enablePassword').checked) {
+                const pin = document.getElementById('password').value;
+                if (!/^\d{6}$/.test(pin)) {
+                    showNotification('Please enter a valid 6-digit PIN', 'error');
+                    return;
+                }
+                formData.password = pin;
+            }
+
+            try {
+                const response = await fetch('/shorten', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    displayResult(result);
+                    showNotification('URL shortened successfully!', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to shorten URL');
+                }
+            } catch (error) {
+                showNotification(error.message, 'error');
+            }
+        });
+
+        function displayResult(result) {
+            // Use the short_url returned by backend for display and QR
+            document.getElementById('shortUrl').value = result.short_url;
+            document.getElementById('qrCode').src = 'data:image/png;base64,' + result.qr_code;
+            document.getElementById('downloadQr').href = 'data:image/png;base64,' + result.qr_code;
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyToClipboard() {
+            const shortUrl = document.getElementById('shortUrl');
+            shortUrl.select();
+            document.execCommand('copy');
+            showNotification('URL copied to clipboard!', 'success');
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.className = 'fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white transform transition-all duration-300';
+            notification.classList.add(type === 'success' ? 'bg-green-500' : 'bg-red-500');
+            notification.textContent = message;
+            
+            // Show notification
+            notification.classList.remove('translate-y-full', 'opacity-0');
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-y-full', 'opacity-0');
+                setTimeout(() => notification.classList.add('hidden'), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

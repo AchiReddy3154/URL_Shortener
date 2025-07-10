@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dark {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .dark .bg-white {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+        .dark .text-gray-800 {
+            color: #ffffff;
+        }
+        .dark .bg-gray-100 {
+            background-color: #1a1a1a;
+        }
+        .dark .bg-gray-50 {
+            background-color: #3d3d3d;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen transition-colors duration-200">
+    <!-- Dark Mode Toggle -->
+    <div class="absolute top-4 right-4">
+        <button id="darkModeToggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-4xl font-bold text-gray-800">URL Analytics</h1>
+                <a href="/" class="text-blue-500 hover:text-blue-600">Back to Home</a>
+            </div>
+
+            <!-- URL Info -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-4">URL Information</h2>
+                        <div class="space-y-2">
+                            <p><span class="font-medium">Original URL:</span> <a id="longUrl" href="#" target="_blank" class="text-blue-500 hover:text-blue-600 break-all"></a></p>
+                            <p><span class="font-medium">Short URL:</span> <a id="shortUrl" href="#" target="_blank" class="text-blue-500 hover:text-blue-600"></a></p>
+                            <p><span class="font-medium">Created:</span> <span id="createdDate"></span></p>
+                            <p><span class="font-medium">Expires:</span> <span id="expirationDate"></span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold mb-4">Quick Stats</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Total Clicks</p>
+                                <p id="totalClicks" class="text-3xl font-bold text-blue-500">0</p>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Unique Visitors</p>
+                                <p id="uniqueVisitors" class="text-3xl font-bold text-green-500">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Clicks Over Time -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Clicks Over Time</h2>
+                    <canvas id="clicksChart"></canvas>
+                </div>
+
+                <!-- Hourly Distribution -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Hourly Distribution</h2>
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+
+                <!-- Device Distribution -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Device Distribution</h2>
+                    <canvas id="deviceChart"></canvas>
+                </div>
+
+                <!-- Browser Distribution -->
+                <div class="bg-white rounded-lg shadow-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4">Browser Distribution</h2>
+                    <canvas id="browserChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Location Map -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                <h2 class="text-xl font-semibold mb-4">Visitor Locations</h2>
+                <div id="locationList" class="grid grid-cols-3 gap-4">
+                    <!-- Location items will be populated here -->
+                </div>
+            </div>
+
+            <!-- Referrers -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
+                <h2 class="text-xl font-semibold mb-4">Top Referrers</h2>
+                <div id="referrerList" class="space-y-2">
+                    <!-- Referrer items will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode functionality
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
+        });
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Get short code from URL
+        const shortCode = window.location.pathname.split('/')[1];
+
+        // Chart instances
+        let charts = {
+            clicks: null,
+            hourly: null,
+            devices: null,
+            browsers: null
+        };
+
+        async function loadAnalytics() {
+            try {
+                const response = await fetch(`/analytics/${shortCode}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showNotification('Error loading analytics', 'error');
+                    return;
+                }
+
+                // Update URL info
+                document.getElementById('longUrl').textContent = data.long_url;
+                document.getElementById('longUrl').href = data.long_url;
+                document.getElementById('shortUrl').textContent = window.location.origin + '/' + shortCode;
+                document.getElementById('shortUrl').href = window.location.origin + '/' + shortCode;
+                document.getElementById('createdDate').textContent = new Date(data.created_at).toLocaleString();
+                document.getElementById('expirationDate').textContent = new Date(data.expires_at).toLocaleString();
+                document.getElementById('totalClicks').textContent = data.total_clicks;
+                document.getElementById('uniqueVisitors').textContent = data.unique_visitors;
+
+                // Update charts
+                updateClicksChart(data.clicks_over_time);
+                updateHourlyChart(data.hourly_distribution);
+                updateDeviceChart(data.devices);
+                updateBrowserChart(data.browsers);
+
+                // Update locations
+                updateLocations(data.locations);
+
+                // Update referrers
+                updateReferrers(data.referrers);
+
+            } catch (error) {
+                showNotification('Error loading analytics', 'error');
+            }
+        }
+
+        function updateClicksChart(clicksData) {
+            const clicksByDate = {};
+            clicksData.forEach(click => {
+                const date = new Date(click.timestamp).toLocaleDateString();
+                clicksByDate[date] = (clicksByDate[date] || 0) + 1;
+            });
+
+            const labels = Object.keys(clicksByDate);
+            const data = labels.map(date => clicksByDate[date]);
+
+            if (charts.clicks) charts.clicks.destroy();
+            charts.clicks = new Chart(document.getElementById('clicksChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Clicks',
+                        data: data,
+                        borderColor: 'rgb(59, 130, 246)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHourlyChart(hourlyData) {
+            const labels = Array.from({ length: 24 }, (_, i) => `${i}:00`);
+            const data = labels.map((_, i) => hourlyData[i] || 0);
+
+            if (charts.hourly) charts.hourly.destroy();
+            charts.hourly = new Chart(document.getElementById('hourlyChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Clicks',
+                        data: data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDeviceChart(devices) {
+            const labels = Object.keys(devices);
+            const data = Object.values(devices);
+
+            if (charts.devices) charts.devices.destroy();
+            charts.devices = new Chart(document.getElementById('deviceChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(16, 185, 129)',
+                            'rgb(249, 115, 22)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateBrowserChart(browsers) {
+            const labels = Object.keys(browsers);
+            const data = Object.values(browsers);
+
+            if (charts.browsers) charts.browsers.destroy();
+            charts.browsers = new Chart(document.getElementById('browserChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(16, 185, 129)',
+                            'rgb(249, 115, 22)',
+                            'rgb(236, 72, 153)',
+                            'rgb(139, 92, 246)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateLocations(locations) {
+            const locationList = document.getElementById('locationList');
+            locationList.innerHTML = '';
+
+            Object.entries(locations)
+                .sort(([, a], [, b]) => b - a)
+                .forEach(([location, count]) => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-gray-50 p-4 rounded-lg';
+                    div.innerHTML = `
+                        <p class="font-medium">${location}</p>
+                        <p class="text-sm text-gray-600">${count} visits</p>
+                    `;
+                    locationList.appendChild(div);
+                });
+        }
+
+        function updateReferrers(referrers) {
+            const referrerList = document.getElementById('referrerList');
+            referrerList.innerHTML = '';
+
+            Object.entries(referrers)
+                .sort(([, a], [, b]) => b - a)
+                .forEach(([referrer, count]) => {
+                    const div = document.createElement('div');
+                    div.className = 'bg-gray-50 p-4 rounded-lg';
+                    div.innerHTML = `
+                        <p class="font-medium">${referrer || 'Direct'}</p>
+                        <p class="text-sm text-gray-600">${count} referrals</p>
+                    `;
+                    referrerList.appendChild(div);
+                });
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            } text-white`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Load analytics when page loads
+        loadAnalytics();
+
+        // Refresh analytics every 30 seconds
+        setInterval(loadAnalytics, 30000);
+    </script>
+</body>
+</html>
