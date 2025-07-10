@@ -9,6 +9,11 @@ A simple, modern, and production-ready URL shortener built with Flask.
 - Minimal, clean, and user-friendly interface
 - No authentication required—public and ready to use
 - Ready for deployment on platforms like Render, Heroku, or your own server
+## Screenshots
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/9dcfcb68-cbd3-4861-9650-4c60d8d00e79" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/853b4630-a7fc-4b17-9888-9fa3cf4f2b0c" />
+
 
 ## Getting Started
 
